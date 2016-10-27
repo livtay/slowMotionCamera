@@ -25,13 +25,13 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         self.collectionView!.register(UICollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         self.navigationItem.title = "My Videos"
         
+        getImages()
+        getVideos()
+        self.collectionView?.reloadData()
     }
     
     override func viewWillAppear(_ animated: Bool) {
-//        if self.arrayOfUrls.count != 0 {
-////            self.createImageArray()
-//            self.collectionView?.reloadData()
-//        }
+
         self.collectionView?.reloadData()
 
     }
@@ -45,7 +45,7 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
     }
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.arrayOfUrls.count
+        return self.arrayOfImages.count
         
     }
 
@@ -89,15 +89,31 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let videoData = NSData(contentsOf: videoURL as URL)
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory: AnyObject = paths[0] as AnyObject
+        
+        
+        let fileManager = FileManager.default
+        var isDir : ObjCBool = false
+        let subDirectory =   NSString(format: "%@/Videos", documentsDirectory as! CVarArg)  //  documentsDirectory .appendingPathComponent("Videos")
+        if !fileManager.fileExists(atPath: subDirectory as String, isDirectory:&isDir) {
+            //create a sub-directory named "videos" to put these in
+            do {
+                try FileManager.default.createDirectory(atPath: subDirectory as String, withIntermediateDirectories: false, attributes: nil)
+            } catch {
+                print(error.localizedDescription)
+            }
+
+        }
+        
         //unique video name
         let date = NSDate()
         let timeSince = floor(date.timeIntervalSince1970)
         let string = String(format: "%.0f", timeSince)
         let path = String(format: "/vid%@.mp4", string)
-        let dataPath = documentsDirectory.appending(path)
-        videoData?.write(toFile: dataPath, atomically: false)
+        let dataPath = subDirectory.appendingPathComponent(path)
+        let dataPathString = "\(dataPath)"
+        videoData?.write(toFile: dataPathString, atomically: false)
         //create thumbnail
-        _ = createThumbnail(URLString: videoURL.path!)
+        _ = createThumbnail(URLString: dataPathString)
         //nsuserdefaults to save the URLs
         let defaults = UserDefaults()
         if (defaults.object(forKey: "URLs") != nil) {
@@ -137,47 +153,70 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory: AnyObject = paths[0] as AnyObject
         var fileName:String?
+        //create a sub-directory named "thumbnails" to put these in
+       // let subDirectory = documentsDirectory.appendingPathComponent("Thumbnails")!
+        let subDirectory =   NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
+        do {
+            try FileManager.default.createDirectory(atPath: subDirectory as String, withIntermediateDirectories: false, attributes: nil)
+        } catch {
+            print(error.localizedDescription)
+        }
         
         if let data = UIImageJPEGRepresentation(uiImage, 0.8) {
-            fileName = documentsDirectory.appending("/\(lastComponent).jpg")
+//            fileName = documentsDirectory.appending("/\(lastComponent).jpg")
+            let dataPathString = "\(subDirectory)"
+            fileName = dataPathString.appending("/\(lastComponent).jpg")
             try? data.write(to: URL(fileURLWithPath: fileName!))
             print("THIS IS THE FILE NAME:" + fileName!)
         }
         
         self.arrayOfImages.add(uiImage)
-        
-//        let defaults = UserDefaults()
-//        if (defaults.object(forKey: "Images") != nil) {
-//            let tempArray = defaults.object(forKey: "Images") as! NSArray
-//            self.arrayOfImages = tempArray.mutableCopy() as! NSMutableArray
-//            self.arrayOfImages.add(fileName)
-//            defaults.set(self.arrayOfImages.copy(), forKey: "Images")
-//        } else {
-//            self.arrayOfImages.add(fileName)
-//            defaults.set(self.arrayOfImages.copy(), forKey: "Images")
-//        }
-//        defaults.synchronize()
-        
         return uiImage
     }
     
     func getImages() {
         
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let documentsDirectory: AnyObject = paths[0] as AnyObject
+        let subDirectory = NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
+        let fileManager = FileManager.default
+        self.arrayOfImages.removeAllObjects()
+        
+        do {
+            let fileList = try fileManager.contentsOfDirectory(atPath: subDirectory as String)
+            for filename in fileList {
+                let dirPath:String = "\(subDirectory)/\(filename)"
+                let image = UIImage(contentsOfFile: dirPath)
+                print(dirPath)
+                self.arrayOfImages.add(image)
+            }
+
+        } catch {
+            print(error.localizedDescription)
+        }
     }
     
-//    func createImageArray() -> Void {
-//        
-//        let defaults = UserDefaults()
-//        let tempArray = defaults.object(forKey: "URLs") as! NSArray
-//        self.arrayOfUrls = tempArray.mutableCopy() as! NSMutableArray
-//        self.arrayOfImages.removeAllObjects()
-//        for i in self.arrayOfUrls {
-//            let tempImage:UIImage = self.createThumbnail(URLString: i as! String)
-//            self.arrayOfImages.add(tempImage)
-//        }
-//    }
+    func getVideos() {
+        
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let documentsDirectory: AnyObject = paths[0] as AnyObject
+        let subDirectory = NSString(format: "%@/Videos", documentsDirectory as! CVarArg)
+        let fileManager = FileManager.default
+        self.arrayOfUrls.removeAllObjects()
+        
+        do {
+            let fileList = try fileManager.contentsOfDirectory(atPath: subDirectory as String)
+            for filename in fileList {
+                let dirPath:String = "\(subDirectory)/\(filename)"
+                let url = URL(fileURLWithPath: dirPath, isDirectory: true)
+                print(url)
+                self.arrayOfUrls.add(url)
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
     
- 
     
     // MARK: UICollectionViewDelegateFlowLayout
     
