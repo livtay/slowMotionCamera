@@ -36,7 +36,25 @@
                 </collectionViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="rL6-sF-zXd" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="887" y="-242"/>
+            <point key="canvasLocation" x="870" y="-242"/>
+        </scene>
+        <!--Player View Controller-->
+        <scene sceneID="tYO-0M-gPG">
+            <objects>
+                <viewController storyboardIdentifier="PlayerViewController" id="YEG-iF-amq" customClass="PlayerViewController" customModule="SloMoTake2" customModuleProvider="target" sceneMemberID="viewController">
+                    <layoutGuides>
+                        <viewControllerLayoutGuide type="top" id="bBu-IF-NVN"/>
+                        <viewControllerLayoutGuide type="bottom" id="6Jw-qk-sjp"/>
+                    </layoutGuides>
+                    <view key="view" contentMode="scaleToFill" id="HMQ-L8-UPG">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="BJe-Hz-FjB" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1560.8" y="-242.42878560719643"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="g5r-Sb-Z8b">
@@ -50,6 +68,7 @@
                     <nil name="viewControllers"/>
                     <connections>
                         <segue destination="aWC-eQ-L8J" kind="relationship" relationship="rootViewController" id="dJv-hJ-OZR"/>
+                        <segue destination="YEG-iF-amq" kind="show" id="QfT-Ev-LeF"/>
                     </connections>
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="82g-gn-Iyu" userLabel="First Responder" sceneMemberID="firstResponder"/>

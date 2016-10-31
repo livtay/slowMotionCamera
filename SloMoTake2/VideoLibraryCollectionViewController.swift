@@ -60,10 +60,14 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
 
     }
 
-    override func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        //go to next VC for video player
-        
-        return true
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let playerVC:PlayerViewController = storyboard.instantiateViewController(withIdentifier: "PlayerViewController") as! PlayerViewController
+        //self.present(playerVC, animated: true, completion: nil)
+        let selectedVideo:Video = self.videos.object(at: indexPath.row) as! Video
+        let videoPath = selectedVideo.videoPath
+        playerVC.videoPath = videoPath
+        self.navigationController?.pushViewController(playerVC, animated: true)
     }
     
     @IBAction func takeNewVideo(_ sender: AnyObject) {

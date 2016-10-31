@@ -20,7 +20,6 @@ class Video {
         self.videoPath = videoPath
     }
     
-    
 }
 
 //then when you segue to new VC from selected image in collection view, pass video object to new VC
