@@ -7,18 +7,25 @@
 //
 
 import Foundation
+import UIKit
 
-//create a custom video object
-//properties of video name, paths, image etc
-//when video is taken, create video object with info
-//when image is created, add it to video object
-//add video to array of videos (will replace other arrays in the VC)
+class Video {
+    
+    var videoName:String
+    var videoPath:String
+    var thumbnail:UIImage?
+    
+    init(videoName: String, videoPath:String) {
+        self.videoName = videoName
+        self.videoPath = videoPath
+    }
+    
+    
+}
+
 //then when you segue to new VC from selected image in collection view, pass video object to new VC
 //then display video/play/stop on that VC
 //do slow-mo feature
-
-
-
 
 
 

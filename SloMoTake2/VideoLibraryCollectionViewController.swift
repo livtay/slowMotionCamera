@@ -17,15 +17,13 @@ private let reuseIdentifier = "Cell"
 class VideoLibraryCollectionViewController: UICollectionViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate, UICollectionViewDelegateFlowLayout {
     
     let controller = UIImagePickerController()
-    var arrayOfUrls:NSMutableArray = []
-    var arrayOfImages:NSMutableArray = []
+    var videos:NSMutableArray = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.collectionView!.register(UICollectionViewCell.self, forCellWithReuseIdentifier: reuseIdentifier)
         self.navigationItem.title = "My Videos"
         
-        getImages()
         getVideos()
         self.collectionView?.reloadData()
     }
@@ -45,14 +43,18 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
     }
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return self.arrayOfImages.count
+        return self.videos.count
         
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
-        let imageView = UIImageView(image: self.arrayOfImages.object(at: indexPath.row) as? UIImage)
+        let currentVideo: Video = self.videos.object(at: indexPath.row) as! Video
+        let image:UIImage = currentVideo.thumbnail!
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = UIViewContentMode.scaleAspectFill
+        imageView.clipsToBounds = true
         cell.backgroundView = imageView
         return cell
 
@@ -90,10 +92,9 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory: AnyObject = paths[0] as AnyObject
         
-        
         let fileManager = FileManager.default
         var isDir : ObjCBool = false
-        let subDirectory =   NSString(format: "%@/Videos", documentsDirectory as! CVarArg)  //  documentsDirectory .appendingPathComponent("Videos")
+        let subDirectory = NSString(format: "%@/Videos", documentsDirectory as! CVarArg)
         if !fileManager.fileExists(atPath: subDirectory as String, isDirectory:&isDir) {
             //create a sub-directory named "videos" to put these in
             do {
@@ -112,20 +113,15 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let dataPath = subDirectory.appendingPathComponent(path)
         let dataPathString = "\(dataPath)"
         videoData?.write(toFile: dataPathString, atomically: false)
+        
         //create thumbnail
-        _ = createThumbnail(URLString: dataPathString)
-        //nsuserdefaults to save the URLs
-        let defaults = UserDefaults()
-        if (defaults.object(forKey: "URLs") != nil) {
-            let tempArray = defaults.object(forKey: "URLs") as! NSArray
-            self.arrayOfUrls = tempArray.mutableCopy() as! NSMutableArray
-            self.arrayOfUrls.add(dataPath)
-            defaults.set(self.arrayOfUrls.copy(), forKey: "URLs")
-        } else {
-            self.arrayOfUrls.add(dataPath)
-            defaults.set(self.arrayOfUrls.copy(), forKey: "URLs")
-        }
-        defaults.synchronize()
+        let thumbnail = createThumbnail(URLString: dataPathString)
+        
+        //create custom video object
+        let newVideo = Video(videoName: string, videoPath: dataPathString)
+        newVideo.thumbnail = thumbnail
+        self.videos.add(newVideo)
+        
         self.collectionView?.reloadData()
         self.dismiss(animated: true, completion: nil)
     }
@@ -153,9 +149,9 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let documentsDirectory: AnyObject = paths[0] as AnyObject
         var fileName:String?
+        
         //create a sub-directory named "thumbnails" to put these in
-       // let subDirectory = documentsDirectory.appendingPathComponent("Thumbnails")!
-        let subDirectory =   NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
+        let subDirectory = NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
         do {
             try FileManager.default.createDirectory(atPath: subDirectory as String, withIntermediateDirectories: false, attributes: nil)
         } catch {
@@ -163,37 +159,12 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         }
         
         if let data = UIImageJPEGRepresentation(uiImage, 0.8) {
-//            fileName = documentsDirectory.appending("/\(lastComponent).jpg")
             let dataPathString = "\(subDirectory)"
             fileName = dataPathString.appending("/\(lastComponent).jpg")
             try? data.write(to: URL(fileURLWithPath: fileName!))
-            print("THIS IS THE FILE NAME:" + fileName!)
+            
         }
-        
-        self.arrayOfImages.add(uiImage)
         return uiImage
-    }
-    
-    func getImages() {
-        
-        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        let documentsDirectory: AnyObject = paths[0] as AnyObject
-        let subDirectory = NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
-        let fileManager = FileManager.default
-        self.arrayOfImages.removeAllObjects()
-        
-        do {
-            let fileList = try fileManager.contentsOfDirectory(atPath: subDirectory as String)
-            for filename in fileList {
-                let dirPath:String = "\(subDirectory)/\(filename)"
-                let image = UIImage(contentsOfFile: dirPath)
-                print(dirPath)
-                self.arrayOfImages.add(image)
-            }
-
-        } catch {
-            print(error.localizedDescription)
-        }
     }
     
     func getVideos() {
@@ -202,21 +173,33 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
         let documentsDirectory: AnyObject = paths[0] as AnyObject
         let subDirectory = NSString(format: "%@/Videos", documentsDirectory as! CVarArg)
         let fileManager = FileManager.default
-        self.arrayOfUrls.removeAllObjects()
+        self.videos.removeAllObjects()
         
         do {
             let fileList = try fileManager.contentsOfDirectory(atPath: subDirectory as String)
             for filename in fileList {
                 let dirPath:String = "\(subDirectory)/\(filename)"
-                let url = URL(fileURLWithPath: dirPath, isDirectory: true)
-                print(url)
-                self.arrayOfUrls.add(url)
+                //let url = URL(fileURLWithPath: dirPath, isDirectory: true)
+                let newVideo = Video(videoName: filename, videoPath: dirPath)
+                let newVideoThumbnail = getThumbnailForVideo(Video: newVideo)
+                newVideo.thumbnail = newVideoThumbnail
+                self.videos.add(newVideo)
             }
         } catch {
             print(error.localizedDescription)
         }
     }
     
+    func getThumbnailForVideo(Video: Video) -> UIImage {
+        
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let documentsDirectory: AnyObject = paths[0] as AnyObject
+        let subDirectory = NSString(format: "%@/Thumbnails", documentsDirectory as! CVarArg)
+        let dirPath:String = "\(subDirectory)/\(Video.videoName).jpg"
+        let image = UIImage(contentsOfFile: dirPath)
+        
+        return image!
+    }
     
     // MARK: UICollectionViewDelegateFlowLayout
     
@@ -225,7 +208,8 @@ class VideoLibraryCollectionViewController: UICollectionViewController, UINaviga
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 90, height:90) // The size of one cell
+        let collectionViewWidth = collectionView.bounds.width/3
+        return CGSize(width: collectionViewWidth, height:collectionViewWidth) // The size of one cell
     }
     
     //Use for interspacing
